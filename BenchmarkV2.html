@@ -1,0 +1,124 @@
+<html>
+  <head>
+
+  </head>
+  <body>
+    <div style="width:70%;text-align: center;margin:auto;">
+      <div style="font-size:3rem;">
+        Average Benchmark Index: <span id="average"></span>
+      </div>
+        Historical Average Benchmark Index: <span id="historicalAverage"></span>
+      </div>
+      <div style="text-align:left;font-size:2rem;">
+        Your Lighthouse Benchmark results:
+        <ul id="benchmark-results"></ul>
+      </div>
+    </div>
+    <script>
+      function computeBenchmarkIndex() {
+  /**
+   * The GC-heavy benchmark that creates a string of length 10000 in a loop.
+   * The returned index is the number of times per second the string can be created divided by 10.
+   * The division by 10 is to keep similar magnitudes to an earlier version of BenchmarkIndex that
+   * used a string length of 100000 instead of 10000.
+   */
+  function benchmarkIndexGC() {
+    const start = Date.now();
+    let iterations = 0;
+
+    while (Date.now() - start < 500) {
+      let s = ''; // eslint-disable-line no-unused-vars
+      for (let j = 0; j < 10000; j++) s += 'a';
+
+      iterations++;
+    }
+
+    const durationInSeconds = (Date.now() - start) / 1000;
+    return Math.round(iterations / 10 / durationInSeconds);
+  }
+
+  /**
+   * The non-GC-dependent benchmark that copies integers back and forth between two arrays of length 100000.
+   * The returned index is the number of times per second a copy can be made, divided by 10.
+   * The division by 10 is to keep similar magnitudes to the GC-dependent version.
+   */
+  function benchmarkIndexNoGC() {
+    const arrA = [];
+    const arrB = [];
+    for (let i = 0; i < 100000; i++) arrA[i] = arrB[i] = i;
+
+    const start = Date.now();
+    let iterations = 0;
+
+    while (Date.now() - start < 500) {
+      const src = iterations % 2 === 0 ? arrA : arrB;
+      const tgt = iterations % 2 === 0 ? arrB : arrA;
+
+      for (let j = 0; j < src.length; j++) tgt[j] = src[j];
+
+      iterations++;
+    }
+
+    const durationInSeconds = (Date.now() - start) / 1000;
+    return Math.round(iterations / 10 / durationInSeconds);
+  }
+
+  // The final BenchmarkIndex is a simple average of the two components.
+  return new Promise(r => setTimeout(() => r((benchmarkIndexGC() + benchmarkIndexNoGC()) / 2), 0));
+}
+      function appendToList(listElem, list) {
+        for (element in list) {
+          let elem = document.createElement("li");
+          elem.innerHTML = list[element];
+          listElem.appendChild(elem);
+        };
+      }
+      async function go() {
+        
+      // Record the results
+      let arrResults = [];
+
+      for (let i = 0; i < 10; i++) {
+        arrResults.push(await computeBenchmarkIndex());
+      let results = document.querySelector("#benchmark-results");
+      
+      appendToList(results, arrResults.slice(i));
+      }
+
+
+      // get average
+      let average = 0;
+
+      for (let i = 0; i < arrResults.length; i++) {
+        average += arrResults[i];
+      }
+      average /= arrResults.length;
+
+      let averageTitle = document.querySelector("#average");
+
+      averageTitle.innerHTML = average
+      
+      var averageBenchmarks = localStorage.getItem("averageBenchmarks");
+
+      if(!averageBenchmarks){
+		 averageBenchmarks = [];
+	  }
+	  averageBenchmarks.push(average);
+	  localStorage.setItem("averageBenchmarks",averageBenchmarks);
+	  let historicalAverage = 0;
+
+      for (let i = 0; i < averageBenchmarks.length; i++) {
+        historicalAverage += averageBenchmarks[i];
+      }
+	  historicalAverage /= averageBenchmarks.length;
+	  
+	  let historicalAverageTitle = document.querySelector("#historicalAverage");
+
+	  historicalAverageTitle.innerHTML = historicalAverage;
+      }
+      
+      go()
+
+    </script>
+  </body>
+</html>
