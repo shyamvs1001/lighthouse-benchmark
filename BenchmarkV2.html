@@ -98,13 +98,13 @@
 
       averageTitle.innerHTML = average
       
-      var averageBenchmarks = localStorage.getItem("averageBenchmarks");
+      var averageBenchmarks = JSON.parse(localStorage.getItem("averageBenchmarks"));
 
       if(!averageBenchmarks){
 		 averageBenchmarks = [];
 	  }
 	  averageBenchmarks.push(average);
-	  localStorage.setItem("averageBenchmarks",averageBenchmarks);
+	  localStorage.setItem("averageBenchmarks",JSON.stringify(averageBenchmarks));
 	  let historicalAverage = 0;
 
       for (let i = 0; i < averageBenchmarks.length; i++) {
